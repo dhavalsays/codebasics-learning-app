@@ -65,6 +65,10 @@ ios/build/
 *.dSYM.zip
 *.dSYM
 
+# Docker
+.docker/
+docker-compose.override.yml
+
 # Misc
 *.pem
 .cache/

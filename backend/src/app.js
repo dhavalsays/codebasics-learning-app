@@ -47,7 +47,7 @@ if (config.env !== 'test') {
 }
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get(['/health', '/api/health'], (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Codebasics Assess API is running',

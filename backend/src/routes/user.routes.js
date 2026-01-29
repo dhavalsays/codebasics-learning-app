@@ -10,6 +10,9 @@ router.use(authenticate);
 router.get('/profile', userController.getProfile);
 router.put('/profile', userController.updateProfile);
 
+// Password
+router.put('/change-password', userController.changePassword);
+
 // Statistics
 router.get('/stats', userController.getStats);
 
@@ -19,5 +22,9 @@ router.get('/badges', userController.getBadges);
 // Activity/Streak
 router.post('/activity', userController.recordActivity);
 router.get('/streak', userController.getStreak);
+
+// Social Sharing
+router.post('/share', userController.recordShare);
+router.get('/shares', userController.getShareHistory);
 
 module.exports = router;

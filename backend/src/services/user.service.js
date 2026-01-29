@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require('uuid');
 const { query } = require('../config/database');
 const { AppError } = require('../middlewares/errorHandler');
 const config = require('../config');
@@ -78,6 +79,16 @@ const getStats = async (userId) => {
     [userId]
   );
 
+  // Get skill test stats
+  const skillStats = await query(
+    `SELECT
+      COUNT(*) as total_attempts,
+      MAX(score_percentage) as best_score
+     FROM skill_test_attempts
+     WHERE user_id = $1`,
+    [userId]
+  );
+
   // Get user's XP and streak info
   const userResult = await query(
     `SELECT total_xp, current_streak, longest_streak, level
@@ -91,8 +102,16 @@ const getStats = async (userId) => {
     [userId]
   );
 
+  // Get share count
+  const shareCount = await query(
+    `SELECT COUNT(*) as count FROM user_activity_log
+     WHERE user_id = $1 AND activity_type = 'social_share'`,
+    [userId]
+  );
+
   const user = userResult.rows[0];
   const career = careerStats.rows[0];
+  const skill = skillStats.rows[0];
 
   return {
     totalXp: user.total_xp,
@@ -103,6 +122,9 @@ const getStats = async (userId) => {
     careerTestsCompleted: parseInt(career.total_attempts, 10),
     rolesExplored: parseInt(career.roles_tested, 10),
     bestCareerScore: career.best_score,
+    skillTestsCompleted: parseInt(skill.total_attempts, 10),
+    bestSkillScore: skill.best_score,
+    totalShares: parseInt(shareCount.rows[0].count, 10),
   };
 };
 
@@ -213,6 +235,71 @@ const getStreak = async (userId) => {
   };
 };
 
+/**
+ * Record a social share event
+ * @param {string} userId - User ID
+ * @param {Object} shareData - Share details { platform, contentType, contentId }
+ */
+const recordShare = async (userId, { platform, contentType, contentId }) => {
+  const validPlatforms = ['linkedin', 'twitter', 'facebook', 'whatsapp', 'other'];
+  const validContentTypes = ['career_test_result', 'skill_test_result', 'badge', 'profile'];
+
+  if (!validPlatforms.includes(platform)) {
+    throw new AppError('Invalid platform', 400, 'INVALID_PLATFORM');
+  }
+
+  if (!validContentTypes.includes(contentType)) {
+    throw new AppError('Invalid content type', 400, 'INVALID_CONTENT_TYPE');
+  }
+
+  // Log the share event
+  await query(
+    `INSERT INTO user_activity_log (id, user_id, activity_type, metadata)
+     VALUES ($1, $2, 'social_share', $3)`,
+    [uuidv4(), userId, JSON.stringify({ platform, contentType, contentId })]
+  );
+
+  // Award XP for sharing
+  const xpAwarded = await gamificationService.awardXp(userId, 'social_share');
+
+  // Check for Social Butterfly badge (5 shares)
+  const shareCount = await query(
+    `SELECT COUNT(*) as count FROM user_activity_log
+     WHERE user_id = $1 AND activity_type = 'social_share'`,
+    [userId]
+  );
+
+  if (parseInt(shareCount.rows[0].count, 10) >= 5) {
+    await gamificationService.awardBadge(userId, 'social_butterfly');
+  }
+
+  return {
+    xpAwarded,
+    message: 'Share recorded successfully',
+  };
+};
+
+/**
+ * Get user's share history
+ */
+const getShareHistory = async (userId) => {
+  const result = await query(
+    `SELECT metadata, created_at
+     FROM user_activity_log
+     WHERE user_id = $1 AND activity_type = 'social_share'
+     ORDER BY created_at DESC
+     LIMIT 50`,
+    [userId]
+  );
+
+  return result.rows.map((row) => ({
+    platform: row.metadata.platform,
+    contentType: row.metadata.contentType,
+    contentId: row.metadata.contentId,
+    sharedAt: row.created_at,
+  }));
+};
+
 // Helper function to get level info
 const getLevelInfo = (totalXp) => {
   const levels = config.levels;
@@ -244,4 +331,6 @@ module.exports = {
   getBadges,
   recordActivity,
   getStreak,
+  recordShare,
+  getShareHistory,
 };

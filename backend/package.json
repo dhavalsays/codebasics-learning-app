@@ -12,6 +12,7 @@
     "db:migrate": "node database/migrate.js",
     "db:seed": "node database/seed.js",
     "db:reset": "node database/reset.js",
+    "create-admin": "node scripts/create-admin.js",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix"
   },

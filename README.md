@@ -92,6 +92,21 @@ npm run dev
 
 Admin panel will be available at: http://localhost:3001
 
+**Default Admin Credentials:**
+```
+Email:    admin@codebasics.io
+Password: Admin@123
+```
+
+To create additional admin users:
+```bash
+# Using Docker
+docker exec -it codebasics-backend npm run create-admin admin@example.com YourPassword "Admin Name"
+
+# Or locally
+cd backend && npm run create-admin admin@example.com YourPassword "Admin Name"
+```
+
 ### 4. Start Mobile App
 
 The mobile app runs outside Docker using Expo:

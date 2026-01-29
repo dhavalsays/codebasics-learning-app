@@ -31,7 +31,11 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-codebasics}:${POSTGRES_PASSWORD:-codebasics123}@postgres:5432/${POSTGRES_DB:-codebasics_assess}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-codebasics_assess}
+      DB_USER: ${POSTGRES_USER:-codebasics}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-codebasics123}
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
